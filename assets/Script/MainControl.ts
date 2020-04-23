@@ -1,3 +1,4 @@
+import AudioSourceControl, { SoundType } from './AudioSourceControl';
 // Learn TypeScript:
 //  - https://docs.cocos.com/creator/manual/en/scripting/typescript.html
 // Learn Attribute:
@@ -14,7 +15,7 @@ export enum GameStatus {
 }
 
 @ccclass
-export default class NewClass extends cc.Component {
+export default class MainControl extends cc.Component {
 
     @property(cc.Sprite)
     spBg: cc.Sprite[] = [null, null];
@@ -29,12 +30,21 @@ export default class NewClass extends cc.Component {
     // Game state
     gameStatus: GameStatus = GameStatus.Game_Ready;
 
+    @property(cc.Label)
+    labelScore: cc.Label = null;
+    // record score
+    gameScore: number = 0;
+
+    // add audio source
+    @property(AudioSourceControl)
+    audioSourceControl: AudioSourceControl = null;
+
     // LIFE-CYCLE CALLBACKS:
 
     onLoad() {
         // open collision system
         var collisionManager = cc.director.getCollisionManager();
-        collisionManager.enabled = true;
+        collisionManager.enabled = false;
         // open debug draw when you debug the game
         // do not forget to close when you ship the game
         collisionManager.enabledDebugDraw = true;
@@ -92,6 +102,8 @@ export default class NewClass extends cc.Component {
         this.btnStart.node.active = true;
         // change the game status to Game_Over
         this.gameStatus = GameStatus.Game_Over;
+        // play game over sound
+        this.audioSourceControl.playSound(SoundType.E_Sound_Die);
     }
 
     touchStartBtn() {
@@ -113,6 +125,11 @@ export default class NewClass extends cc.Component {
         // reset angle and position of bird
         var bird = this.node.getChildByName("Bird");
         bird.y = 0;
+        bird.x = 0;
         bird.rotation = 0;
+
+        // reset score when restart game
+        this.gameScore = 0;
+        this.labelScore.string = this.gameScore.toString();
     }
 }

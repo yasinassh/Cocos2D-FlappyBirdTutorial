@@ -5,11 +5,12 @@
 // Learn life-cycle callbacks:
 //  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
 import MainControl, { GameStatus } from "./MainControl";
+import { SoundType } from "./AudioSourceControl";
 
 const {ccclass, property} = cc._decorator;
 
 @ccclass
-export default class NewClass extends cc.Component {
+export default class BirdControl extends cc.Component {
 
     // Speed of bird
     speed: number = 0;
@@ -48,11 +49,21 @@ export default class NewClass extends cc.Component {
 
     onTouchStart(event: cc.Event.EventTouch) {
         this.speed = 2;
+        this.mainControl.audioSourceControl.playSound(SoundType.E_Sound_Fly);
     }
 
     onCollisionEnter (other: cc.Collider, self: cc.Collider) {
-        //game over
-        console.log("game over");
-        this.mainControl.gameOver();
+        // collider tag is 0, that means the bird have a collision with pipe, the game over
+        if (other.tag === 0) {
+            cc.log("game over");
+            this.mainControl.gameOver();
+            this.speed = 0;
+        }
+        // collider tag is 1, that means the bird cross a pipe, the add score
+        else if (other.tag === 1) {
+            this.mainControl.gameScore++;
+            this.mainControl.labelScore.string = this.mainControl.gameScore.toString();
+            this.mainControl.audioSourceControl.playSound(SoundType.E_Sound_Score);
+        }
     }
 }
