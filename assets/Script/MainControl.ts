@@ -7,27 +7,112 @@
 
 const {ccclass, property} = cc._decorator;
 
+export enum GameStatus {
+    Game_Ready = 0, // Ready state
+    Game_Playing,   // Game Playing
+    Game_Over       // Game Over
+}
+
 @ccclass
 export default class NewClass extends cc.Component {
 
     @property(cc.Sprite)
     spBg: cc.Sprite[] = [null, null];
 
+    @property(cc.Prefab)
+    pipePrefab: cc.Prefab = null;
+    pipe: cc.Node[] = [null, null, null]
+    spGameOver: cc.Sprite = null;
+
+    // Start button
+    btnStart: cc.Button = null;
+    // Game state
+    gameStatus: GameStatus = GameStatus.Game_Ready;
+
     // LIFE-CYCLE CALLBACKS:
 
-    // onLoad () {}
+    onLoad() {
+        // open collision system
+        var collisionManager = cc.director.getCollisionManager();
+        collisionManager.enabled = true;
+        // open debug draw when you debug the game
+        // do not forget to close when you ship the game
+        collisionManager.enabledDebugDraw = true;
+        // find the GameOver node, and set active property to false
+        this.spGameOver = this.node.getChildByName("GameOver").getComponent(cc.Sprite);
+        this.spGameOver.node.active = false;
+        // find the start button
+        this.btnStart = this.node.getChildByName("BtnStart").getComponent(cc.Button);
+        // register clicked callback
+        this.btnStart.node.on(cc.Node.EventType.TOUCH_END, this.touchStartBtn, this);
+    }
 
     start () {
-
+        for (let i = 0; i < this.pipe.length; i++) {
+            this.pipe[i] = cc.instantiate(this.pipePrefab);
+            this.node.getChildByName("Pipe").addChild(this.pipe[i]);
+            
+            this.pipe[i].x = 170 + 200 * i;
+            var minY = -120;
+            var maxY = 120;
+            this.pipe[i].y = minY + Math.random() * (maxY - minY);
+        }
     }
 
     update (dt: number) {
+        // if game status is not playing, stop calculate and return
+        if (this.gameStatus !== GameStatus.Game_Playing) {
+            return;
+        }
+
         // move the background node
         for (let i = 0; i < this.spBg.length; i++) {
             this.spBg[i].node.x -= 1.0;
-            if (this.spBg[i].node.x <= -288) {
+            if (this.spBg[i].node.x <= -280) {
                 this.spBg[i].node.x = 288;
             }
         }
+
+        // move pipes
+        for (let i = 0; i < this.pipe.length; i++) {
+            this.pipe[i].x -= 1.0;
+            if (this.pipe[i].x <= -170) {
+                this.pipe[i].x = 430;
+
+                var minY = -120;
+                var maxY = 120;
+                this.pipe[i].y = minY + Math.random() * (maxY - minY);
+            }
+        }
+    }
+
+    gameOver() {
+        this.spGameOver.node.active = true;
+        // when game is over, show the start button
+        this.btnStart.node.active = true;
+        // change the game status to Game_Over
+        this.gameStatus = GameStatus.Game_Over;
+    }
+
+    touchStartBtn() {
+        // hide start button
+        this.btnStart.node.active = false;
+        // set the gae status to playing
+        this.gameStatus = GameStatus.Game_Playing;
+
+        // hide game over node
+        this.spGameOver.node.active = false;
+        //reset position of all the pipes
+        for (let i = 0; i < this.pipe.length; i++) {
+            this.pipe[i].x = 170 + 200 * i;
+            var minY = -120;
+            var maxY = 120;
+            this.pipe[i].y = minY + Math.random() * (maxY - minY);
+        }
+
+        // reset angle and position of bird
+        var bird = this.node.getChildByName("Bird");
+        bird.y = 0;
+        bird.rotation = 0;
     }
 }
